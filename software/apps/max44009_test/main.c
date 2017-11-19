@@ -10,15 +10,10 @@
 #include "nrf_drv_twi.h"
 #include "nrf_drv_gpiote.h"
 #include "app_util_platform.h"
-#include "ble_advdata.h"
 #include "nordic_common.h"
-#include "softdevice_handler.h"
-#include "ble_debug_assert_handler.h"
 #include "led.h"
 #include "app_uart.h"
 
-#include "simple_ble.h"
-#include "simple_adv.h"
 #include "permamote.h"
 #include "max44009.h"
 
@@ -27,16 +22,6 @@
 #define UART_RX_BUF_SIZE     256
 
 char name[10] = "Permamote";
-
-// Intervals for advertising and connections
-static simple_ble_config_t ble_config = {
-  .platform_id       = 0x00,              // used as 4th octect in device BLE address
-  .device_id         = DEVICE_ID_DEFAULT,
-  .adv_name          = name,
-  .adv_interval      = MSEC_TO_UNITS(500, UNIT_0_625_MS),
-  .min_conn_interval = MSEC_TO_UNITS(500, UNIT_1_25_MS),
-  .max_conn_interval = MSEC_TO_UNITS(1000, UNIT_1_25_MS)
-};
 
 nrf_drv_twi_t twi_instance = NRF_DRV_TWI_INSTANCE(1);
 
@@ -67,8 +52,8 @@ void uart_init(void) {
 
   const app_uart_comm_params_t comm_params =
   {
-    11,
-    12,
+    SPI_MISO,
+    SPI_MOSI,
     0,
     0,
     APP_UART_FLOW_CONTROL_DISABLED,
@@ -86,9 +71,6 @@ void uart_init(void) {
 }
 
 int main(void) {
-  // Setup BLE
-  simple_ble_init(&ble_config);
-
   // init uart
   uart_init();
   printf("\nLUX TEST\n");
@@ -115,9 +97,6 @@ int main(void) {
 
   max44009_init(&twi_instance);
   max44009_config(config);
-
-  // Advertise because why not
-  simple_adv_only_name();
 
   while (1) {
     float lux = max44009_read_lux();
